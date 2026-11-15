@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Müllkalender</title>
+<meta name="theme-color" content="#14532d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Müll">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#f4f5f1; --card:#fff; --text:#1c1f1a; --muted:#6b7064; --line:#e3e5de;
+    --accent:#14532d;
+    --rest:#3f3f46; --bio:#8a5a2b; --papier:#c62828; --gelb:#e8b400; --asz:#2e7d5b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#121411; --card:#1c1f1b; --text:#ecefe8; --muted:#9aa094; --line:#2b2f29; --rest:#a1a1aa; }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+  body{padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 24px);max-width:520px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  h1{font-size:22px;letter-spacing:-.02em}
+  .ort{font-size:13px;color:var(--muted)}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer}
+  .hero{border-radius:22px;padding:22px;color:#fff;margin-bottom:20px;position:relative;overflow:hidden}
+  .hero .lbl{font-size:13px;opacity:.85;text-transform:uppercase;letter-spacing:.06em}
+  .hero .when{font-size:34px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px}
+  .hero .what{font-size:20px;font-weight:600}
+  .hero .tip{margin-top:12px;font-size:14px;background:rgba(0,0,0,.18);display:inline-block;padding:6px 10px;border-radius:10px}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);border-radius:999px;padding:4px 12px 4px 8px;margin:4px 6px 0 0;font-size:17px}
+  .pill .dot{width:14px;height:14px;box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+  .hero.gelb{color:#1c1f1a}
+  .hero.gelb .tip{background:rgba(0,0,0,.08)}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 4px 8px}
+  .list{background:var(--card);border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+  .row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .dot{width:14px;height:14px;border-radius:50%;flex:none}
+  .row .t{flex:1;font-weight:500}
+  .row .t small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+  .row .d{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+  .row .d b{display:block;color:var(--text);font-weight:600}
+  .row.soon .d b{color:var(--accent)}
+  @media (prefers-color-scheme: dark){ .row.soon .d b{color:#6ee7a0} }
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0}
+  .chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 12px;font-size:14px;cursor:pointer;user-select:none}
+  .chip.off{opacity:.4}
+  .chip .dot{width:10px;height:10px}
+  .empty{padding:18px;color:var(--muted);text-align:center}
+  .note{font-size:12px;color:var(--muted);margin:22px 4px 0;line-height:1.5}
+  dialog{border:0;border-radius:20px;padding:20px;background:var(--card);color:var(--text);width:min(92vw,400px);margin:auto}
+  dialog::backdrop{background:rgba(0,0,0,.45)}
+  dialog h3{margin-bottom:6px}
+  dialog p{color:var(--muted);font-size:14px;margin-bottom:14px}
+  .opts{display:grid;gap:8px}
+  .opt{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:12px;padding:12px 14px;font-size:16px;cursor:pointer}
+  .opt.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Müllkalender</h1>
+    <div class="ort" id="ortLabel"></div>
+  </div>
+  <button class="btn" id="ortBtn">Ortsteil</button>
+</header>
+
+<div id="hero"></div>
+
+<h2>Anzeigen</h2>
+<div class="chips" id="chips"></div>
+
+<h2>Nächste Termine</h2>
+<div class="list" id="list"></div>
+
+<p class="note" id="note"></p>
+
+<dialog id="dlg">
+  <h3>Dein Ortsteil</h3>
+  <p>Wichtig für die Altpapier-Termine, die je nach Ortsteil verschieden sind.</p>
+  <div class="opts" id="opts"></div>
+</dialog>
+
+<script>
+// ===== Daten: Gemeinde Unterkohlstätten, Abfuhrtermine 2026 =====
+// Quelle: unterkohlstaetten.at → Veranstaltungskalender. Für 2027 einfach hier ergänzen.
+const DATA_UNTIL = "2026-12-31";
+
+const ORTSTEILE = {
+  UK:"Unterkohlstätten", OK:"Oberkohlstätten", GL:"Glashütten b. Schlaining",
+  WB:"Weinberg", HO:"Holzschlag", "GÜ":"Günseck"
+};
+
+const TYPES = {
+  rest:  {name:"Restmüll",   color:"var(--rest)"},
+  bio:   {name:"Biomüll",    color:"var(--bio)"},
+  papier:{name:"Altpapier",  color:"var(--papier)"},
+  gelb:  {name:"Gelber Sack",color:"var(--gelb)"},
+  asz:   {name:"Altstoffsammelzentrum", short:"ASZ", color:"var(--asz)"}
+};
+
+const Y = "2026";
+const d = s => s.split(",").map(x=>x.trim()).filter(Boolean).map(x=>{const [dd,mm]=x.split(".");return `${Y}-${mm}-${dd}`;});
+
+const EVENTS = [];
+const add = (type, dates, extra={}) => dates.forEach(date => EVENTS.push({type, date, ...extra}));
+
+add("rest", d("21.01,18.02,18.03,15.04,13.05,10.06,08.07,05.08,02.09,30.09,28.10,25.11,23.12"));
+add("bio",  d("02.01,16.01,30.01,13.02,27.02,13.03,27.03,10.04,24.04,08.05,22.05,05.06,19.06,03.07,17.07,31.07,14.08,28.08,11.09,25.09,09.10,23.10,06.11,20.11,04.12,18.12"));
+add("gelb", d("30.01,13.03,24.04,05.06,17.07,28.08,09.10,20.11"));
+add("papier", d("19.01,16.03,11.05,06.07,31.08,24.10,21.12"), {areas:["GL","OK","UK","WB"]});
+add("papier", d("16.02,13.04,08.06,03.08,29.09,23.11"),       {areas:["GÜ","HO"]});
+
+// ASZ: normal Mi 16–17 Uhr, Sondertermine mit eigener Zeit
+add("asz", d("07.01,14.01,21.01,28.01,04.02,11.02,18.02,25.02,04.03,11.03,18.03,25.03,01.04,08.04,15.04,22.04,29.04,06.05,13.05,20.05,27.05,03.06,10.06,17.06,24.06,01.07,08.07,15.07,22.07,29.07,05.08,12.08,19.08,26.08,02.09,09.09,16.09,23.09,30.09,07.10,14.10,21.10,28.10,04.11,18.11,25.11,02.12,09.12,16.12,23.12,30.12"), {time:"16–17 Uhr"});
+add("asz", d("02.01,06.03,08.05,03.07,04.09,06.11"), {time:"14–16 Uhr"});
+add("asz", d("07.02,04.04,06.06,03.10,05.12"), {time:"8–10 Uhr"});
+add("asz", d("01.08"), {time:""});
+
+// ===== Einstellungen (lokal gespeichert) =====
+const store = {
+  get(k,def){ try{ const v=localStorage.getItem(k); return v===null?def:JSON.parse(v);}catch(e){return def;} },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+let ort = store.get("ort", null);
+let hidden = store.get("hidden", ["asz"]);
+
+// ===== Helfer =====
+const WD = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const WDs = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const MO = ["Jän","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+const parse = s => { const [y,m,dd]=s.split("-").map(Number); return new Date(y,m-1,dd); };
+const today = () => { const n=new Date(); return new Date(n.getFullYear(),n.getMonth(),n.getDate()); };
+const diff = date => Math.round((parse(date)-today())/86400000);
+const fmt = date => { const x=parse(date); return `${x.getDate()}. ${MO[x.getMonth()]}`; };
+const rel = n => n===0?"Heute":n===1?"Morgen":n===2?"Übermorgen":`in ${n} Tagen`;
+
+function relevant(){
+  return EVENTS
+    .filter(e => !e.areas || !ort || e.areas.includes(ort))
+    .filter(e => !hidden.includes(e.type))
+    .filter(e => diff(e.date) >= 0)
+    .sort((a,b)=> a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
+}
+
+function render(){
+  document.getElementById("ortLabel").textContent = ort ? (ort==="UK" ? "Unterkohlstätten" : ORTSTEILE[ort] + " · Gem. Unterkohlstätten") : "Gemeinde Unterkohlstätten";
+
+  // Chips
+  const chips = document.getElementById("chips");
+  chips.innerHTML = "";
+  Object.entries(TYPES).forEach(([k,t])=>{
+    const c = document.createElement("div");
+    c.className = "chip" + (hidden.includes(k)?" off":"");
+    c.innerHTML = `<span class="dot" style="background:${t.color}"></span>${t.short||t.name}`;
+    c.onclick = ()=>{ hidden = hidden.includes(k) ? hidden.filter(x=>x!==k) : [...hidden,k]; store.set("hidden",hidden); render(); };
+    chips.appendChild(c);
+  });
+
+  const ev = relevant();
+  const pickups = ev.filter(e=>e.type!=="asz");
+  const hero = document.getElementById("hero");
+
+  // Hero: nächste Abholung (alle Tonnen am selben Tag zusammen)
+  const first = pickups[0] || ev[0];
+  if(first){
+    const same = (first.type==="asz" ? [first] : pickups.filter(e=>e.date===first.date));
+    const n = diff(first.date);
+    const t = TYPES[same[0].type];
+    const names = same.map(e=>TYPES[e.type].name).join(" + ");
+    const bg = same.length>1 ? "var(--accent)" : t.color;
+    let tip = "";
+    if(first.type!=="asz"){
+      if(n===0) tip = "Heute ist Abholung, bitte früh rausstellen.";
+      else if(n===1) tip = "Heute Abend rausstellen!";
+    } else tip = first.time ? `Geöffnet ${first.time}` : "";
+    const yellowOnly = same.length===1 && same[0].type==="gelb";
+    hero.className = "hero" + (yellowOnly?" gelb":"");
+    hero.style.background = bg;
+    hero.innerHTML = `<div class="lbl">${first.type==="asz"?"Nächster ASZ-Termin":"Nächste Abholung"}</div>
+      <div class="when">${rel(n)}</div>
+      <div class="what">${same.length>1 ? same.map(e=>`<span class="pill"><span class="dot" style="background:${TYPES[e.type].color}"></span>${TYPES[e.type].name}</span>`).join("") : names}</div>
+      <div style="opacity:.85;margin-top:2px">${WD[parse(first.date).getDay()]}, ${fmt(first.date)}</div>
+      ${tip?`<div class="tip">${tip}</div>`:""}`;
+  } else {
+    hero.className = "hero"; hero.style.background = "var(--muted)";
+    hero.innerHTML = `<div class="lbl">Keine Termine</div><div class="what" style="margin-top:6px">Für dieses Jahr sind keine Termine mehr eingetragen.</div>`;
+  }
+
+  // Liste
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+  ev.slice(0,30).forEach(e=>{
+    const n = diff(e.date), t = TYPES[e.type], x = parse(e.date);
+    const r = document.createElement("div");
+    r.className = "row" + (n<=1?" soon":"");
+    const sub = e.type==="asz" ? (e.time||"") : (e.areas && !ort ? e.areas.map(a=>ORTSTEILE[a]).join(", ") : "");
+    r.innerHTML = `<span class="dot" style="background:${t.color}"></span>
+      <div class="t">${t.name}${sub?`<small>${sub}</small>`:""}</div>
+      <div class="d"><b>${n<=2?rel(n):WDs[x.getDay()]+", "+fmt(e.date)}</b>${n<=2?WDs[x.getDay()]+", "+fmt(e.date):rel(n)}</div>`;
+    list.appendChild(r);
+  });
+  if(!ev.length) list.innerHTML = `<div class="empty">Keine weiteren Termine.</div>`;
+
+  const left = diff(DATA_UNTIL);
+  document.getElementById("note").innerHTML =
+    (left < 45 ? `<b>Hinweis:</b> Termine sind nur bis ${fmt(DATA_UNTIL)} ${DATA_UNTIL.slice(0,4)} eingetragen. Neue Termine bitte nachtragen.<br>` : "") +
+    `Quelle: Veranstaltungskalender der Gemeinde Unterkohlstätten. Angaben ohne Gewähr. Funktioniert offline.`;
+}
+
+// Ortsteil-Auswahl
+const dlg = document.getElementById("dlg");
+function openOrt(){
+  const opts = document.getElementById("opts");
+  opts.innerHTML = "";
+  Object.entries(ORTSTEILE).forEach(([k,v])=>{
+    const b = document.createElement("button");
+    b.className = "opt" + (k===ort?" sel":"");
+    b.textContent = v;
+    b.onclick = ()=>{ ort=k; store.set("ort",k); dlg.close(); render(); };
+    opts.appendChild(b);
+  });
+  dlg.showModal();
+}
+document.getElementById("ortBtn").onclick = openOrt;
+
+render();
+if(!ort) openOrt();
+
+// Um Mitternacht / beim Zurückkehren aktualisieren
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) render(); });
+
+// Offline-Modus
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
